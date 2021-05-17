@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     
     # App's Settings
     'smartcane_app.apps.SmartcaneAppConfig',
+    'rest_framework'
 
 ]
 

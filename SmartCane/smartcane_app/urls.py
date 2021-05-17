@@ -4,5 +4,6 @@ from . import views
 
 
 urlpatterns = [
-#    path('getCellCerti/', views.getCellCerti, name='getCellCerti'),
+#    path('direct/', views.MyView.as_view(), name='post-dl')
+    path('direct/', views.direction, name='post-dl')
 ]
