@@ -3,12 +3,16 @@ from rest_framework import views
 from rest_framework.response import Response
 from .serializers import DirectionSerializer, ImageSerializer
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
 from django.http.response import JsonResponse
-from rest_framework.parsers import JSONParser 
+from rest_framework.parsers import JSONParser, FileUploadParser
 from rest_framework import status, viewsets
 from .display import create_mask, show_predictions
 import cv2
 import tensorflow as tf
+import os
+import io
+import PIL.Image as Image
 
 import numpy as np
 from PIL import Image
@@ -17,7 +21,7 @@ import pandas as pd
 result = "default"
 
 
-def DL(image):
+def DL():
     gpus = tf.config.experimental.list_physical_devices('GPU')
 
     if gpus:
@@ -44,8 +48,7 @@ def DL(image):
 
 
     # input details
-    #img = cv2.imread('./surface_img/MP_SEL_SUR_009569.jpg')
-    img = cv2.imread(image)
+    img = cv2.imread('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png')
     img = cv2.resize(img, (IMG_WIDTH,IMG_HEIGHT))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -99,6 +102,7 @@ def DL(image):
 
 
     def direction_guidance():
+        global result
         key_min = min(caution.keys(), key=lambda k: caution[k])
         if key_min == 'clist1':
             result="맨 왼쪽"
@@ -130,14 +134,24 @@ def DL(image):
     direction_guidance()
 
 
+
+
 @api_view(['GET','POST'])
 def direction(request):
-    if request.method == "POST":
-        image_serializers=ImageSerializer(data=request.data)
-        if image_serializers.is_valid(raise_exception=True):
-            image_serializers.save()
-            return Response(image_serializers.data)
-    else:
+    if request.method == "GET":
+        DL()
         mydata = [{"result": result}]
         direction_serializers = DirectionSerializer(mydata, many=True)
         return Response(direction_serializers.data)
+
+
+@api_view(['GET','POST'])
+def image(request):
+    if request.method == "POST":
+        bytes = request.FILES['file'].file.getvalue()
+        image = Image.open(io.BytesIO(bytes)).convert("RGB")
+        image.save('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png', format='PNG')
+        return Response("OK")
+    else:
+        image_serializers = ImageSerializer(many=True)
+        return Response(data=image_serializers.data)

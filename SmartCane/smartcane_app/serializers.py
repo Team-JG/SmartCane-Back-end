@@ -8,8 +8,17 @@ class DirectionSerializer(serializers.Serializer):
     class Meta:
         fields = ('result')
 
+
+class Image(object):
+    def __init__(self,):
+        self.image = image
+
 class ImageSerializer(serializers.Serializer):
-    image = serializers.ImageField()
+    image = serializers.FileField()
 
     class Meta:
         fields = ('image')
+
+    # def create(self, validated_data):
+    #     return Image(**validated_data)
+    
