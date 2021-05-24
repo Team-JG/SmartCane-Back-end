@@ -8,7 +8,6 @@ from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser, FileUploadParser
 from rest_framework import status, viewsets
 from .display import create_mask, show_predictions
-from keras.models import load_model
 import cv2
 import tensorflow as tf
 import os
@@ -36,20 +35,46 @@ def DL():
     IMG_HEIGHT = 272
     n_classes = 7
 
-    file_name = os.path.dirname(__file__) + '/pspunet_weight.h5'
-    model = load_model(file_name)
-    
+    #Put in your local file path
+    tensorflow_lite_model_file = "/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/converted_model.tflite"
+
+    interpreter = tf.lite.Interpreter(tensorflow_lite_model_file)
+    # Load TFLite model and allocate tensors.
+
+    # Get input and output tensors.
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+
     # input details
     img = cv2.imread('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png')
     img = cv2.resize(img, (IMG_WIDTH,IMG_HEIGHT))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    img = img / 255
-
     img = tf.expand_dims(img, 0)
 
-    pre = model.predict(img)
-    pre = create_mask(pre).numpy()
+    input_data = np.array(img, dtype=np.float32)
+    #print(input_data.shape)
+    '''
+    Get indexes of input and output layers
+    input_details[0]['index']를 출력하면 0, 딕셔너리 안에 index라는 key가 있고 그 Index값이 0임.
+    [1,IMG_HEIGHT, IMG_WIDTH,3] -> input에 들어가는 image의 shape 형태 [갯수, height, width, 채널]
+    '''
+    interpreter.resize_tensor_input(input_details[0]['index'],[1, IMG_HEIGHT, IMG_WIDTH, 3])
+    # allocate_tensor
+    interpreter.allocate_tensors()
+    '''
+    Transform input data (tensor_index, value)
+    tensor_index: Tensor index of tensor to set. This value can be gotten from the 'index' field in get_input_details.
+    value:	Value of tensor to set.
+    '''
+    interpreter.set_tensor(input_details[0]['index'], input_data)
+    # run the inference
+    interpreter.invoke()
+    # output_details[0]['index'] = the index which provides the input
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+
+    pre = create_mask(output_data).numpy()
 
     result1 = np.array(pre).T[0][0:80]
     result2 = np.array(pre).T[0][80:160]
