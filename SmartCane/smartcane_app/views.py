@@ -133,15 +133,12 @@ def DL():
     direction_guidance()
 
 
-
-
-# @api_view(['GET','POST'])
-# def direction(request):
-#     if request.method == "GET":
-#         DL()
-#         mydata = [{"result": result}]
-#         direction_serializers = DirectionSerializer(mydata, many=True)
-#         return Response(direction_serializers.data)
+#""bike_lane_normal", "sidewalk_asphalt", "sidewalk_urethane""
+# "caution_zone_stairs", "caution_zone_manhole", "caution_zone_tree_zone", "caution_zone_grating", "caution_zone_repair_zone"]
+#"alley_crosswalk","roadway_crosswalk"
+#"braille_guide_blocks_normal", "braille_guide_blocks_damaged"
+#"roadway_normal","alley_normal","alley_speed_bump", "alley_damaged""
+#"sidewalk_blocks","sidewalk_cement" , "sidewalk_soil_stone", "sidewalk_damaged","sidewalk_other"
 
 
 @api_view(['GET','POST'])
