@@ -12,15 +12,15 @@ import cv2
 import tensorflow as tf
 import os
 import io
-import PIL.Image as Image
 import numpy as np
 from PIL import Image
-import pandas as pd
+import time
+import asyncio
 
 result = "default"
 
 
-def DL():
+def predict():
     gpus = tf.config.experimental.list_physical_devices('GPU')
 
     if gpus:
@@ -83,54 +83,83 @@ def DL():
     result5 = np.array(pre).T[0][320:400]
     result6 = np.array(pre).T[0][400:480]
 
-    caution = {'clist1':0, 'clist2':0, 'clist3':0, 'clist4':0, 'clist5':0, 'clist6':0}
+    # caution = {'clist1':0, 'clist2':0, 'clist3':0, 'clist4':0, 'clist5':0, 'clist6':0}
+    # crosswalk = {'wlist1':0, 'wlist2':0, 'wlist3':0, 'wlist4':0, 'wlist5':0, 'wlist6':0}
+    # roadway = {'rlist1':0, 'rlist2':0, 'rlist3':0, 'rlist4':0, 'rlist5':0, 'rlist6':0}
 
-    def caution_zone(result, clist):
+    dic1 = {'맨 왼쪽에 주의 구간':0, '맨 왼쪽에 횡단보도':0, '맨 왼쪽에 차도':0}
+    dic2 = {'왼쪽에 주의 구간':0, '왼쪽에 횡단보도':0, '왼쪽에 차도':0}
+    dic3 = {'정방향에 주의 구간':0, '정방향에 횡단보도':0, '정방향에 차도':0}
+    dic4 = {'정방향에 주의 구간':0, '정방향에 횡단보도':0, '정방향에 차도':0}
+    dic5 = {'오른쪽에 주의 구간':0, '오른쪽에 횡단보도':0, '오른쪽에 차도':0}
+    dic6 = {'맨 오른쪽에 주의 구간':0, '맨 오른쪽에 횡단보도':0, '맨 오른쪽에 차도':0}
+
+    # caution = [2,]
+    # crosswalk = [3,]
+    # roadway = [5,]
+
+
+    async def caution_zone(result, dic):
+        cnt_2 = 0
+        cnt_3 = 0
+        cnt_5 = 0
+        k_list = []
         for j in result:
             for x in j:
                 if x == 2:
-                    clist += 1
-        return clist
+                    cnt_2 += 1
+                elif x == 3:
+                    cnt_3 += 1
+                elif x == 5:
+                    cnt_5 += 1
 
-    caution['clist1'] = caution_zone(result1, caution['clist1'])
-    caution['clist2'] = caution_zone(result2, caution['clist2'])
-    caution['clist3'] = caution_zone(result3, caution['clist3'])
-    caution['clist4'] = caution_zone(result4, caution['clist4'])
-    caution['clist5'] = caution_zone(result5, caution['clist5'])
-    caution['clist6'] = caution_zone(result6, caution['clist6'])
-
-
-    def direction_guidance():
-        global result
-        key_min = min(caution.keys(), key=lambda k: caution[k])
-        if key_min == 'clist1':
-            result="맨 왼쪽"
-            print("맨 왼쪽")
-        elif key_min == 'clist2':
-            result="살짝 왼쪽"
-            print("살짝 왼쪽")
-        elif key_min == 'clist3':
-            result="직진"
-            print("직진")
-        elif key_min == 'clist4':
-            result="직진"
-            print("직진")
-        elif key_min == 'clist5':
-            result="살짝 오른쪽"
-            print("살짝 오른쪽")
-        elif key_min == 'clist6':
-            result="맨 오른쪽"
-            print("맨 오른쪽")
+        for key in dic:
+            k_list.append(key)
+        dic[k_list[0]] = cnt_2
+        dic[k_list[1]] = cnt_3
+        dic[k_list[2]] = cnt_5
 
 
-    print("The number of label 2 in result1 : ", caution['clist1'])
-    print("The number of label 2 in result2 : ", caution['clist2'])
-    print("The number of label 2 in result3 : ", caution['clist3'])
-    print("The number of label 2 in result4 : ", caution['clist4'])
-    print("The number of label 2 in result5 : ", caution['clist5'])
-    print("The number of label 2 in result6 : ", caution['clist6'])
+    async def find_section(list):
+        for key in list:
+            if list[key] > 2000:
+                print(f'{key}있습니다.')
 
-    direction_guidance()
+
+    async def caution_async_process():
+        start = time.time()
+        await asyncio.wait([
+            caution_zone(result1, dic1),
+            caution_zone(result2, dic2),
+            caution_zone(result3, dic3),
+            caution_zone(result4, dic4),
+            caution_zone(result5, dic5),
+            caution_zone(result6, dic6),
+        ])
+        end = time.time()
+        print(f'>>> caution_zone 비동기 처리 총 소요 시간: {end - start}')
+
+        start = time.time()
+        await asyncio.wait([
+            find_section(dic1),
+            find_section(dic2),
+            find_section(dic3),
+            find_section(dic4),
+            find_section(dic5),
+            find_section(dic6),
+        ])
+        end = time.time()
+        print(f'>>> direction_guidance 비동기 처리 총 소요 시간: {end - start}')
+
+
+    asyncio.run(caution_async_process())
+    print("=============")
+    print(dic1)
+    print(dic2)
+    print(dic3)
+    print(dic4)
+    print(dic5)
+    print(dic6)
 
 
 #""bike_lane_normal", "sidewalk_asphalt", "sidewalk_urethane""
@@ -139,7 +168,7 @@ def DL():
 #"braille_guide_blocks_normal", "braille_guide_blocks_damaged"
 #"roadway_normal","alley_normal","alley_speed_bump", "alley_damaged""
 #"sidewalk_blocks","sidewalk_cement" , "sidewalk_soil_stone", "sidewalk_damaged","sidewalk_other"
-
+# 2, 3, 5
 
 @api_view(['GET','POST'])
 def direction(request):
@@ -149,7 +178,7 @@ def direction(request):
         image.save('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png', format='PNG')
         return Response("OK")
     else:
-        DL()
+        predict()
         mydata = [{"result": result}]
         direction_serializers = DirectionSerializer(mydata, many=True)
         return Response(direction_serializers.data)
