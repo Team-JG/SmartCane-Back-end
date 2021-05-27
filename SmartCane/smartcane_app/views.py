@@ -56,6 +56,7 @@ def predict(image):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     img = tf.expand_dims(img, 0)
+    img = img / 255
 
     input_data = np.array(img, dtype=np.float32)
     #print(input_data.shape)
@@ -80,98 +81,80 @@ def predict(image):
 
     pre = create_mask(output_data).numpy()
 
-    section1 = np.array(pre).T[0][0:80]
-    section2 = np.array(pre).T[0][80:160]
-    section3 = np.array(pre).T[0][160:320]
-    section4 = np.array(pre).T[0][320:400]
-    section5 = np.array(pre).T[0][400:480]
+    section1 = np.array(pre).T[0][0:160]
+    section2 = np.array(pre).T[0][160:320]
+    section3 = np.array(pre).T[0][320:480]
 
     
-    result = {
-        "left-end" : {
-            "caution": 0,
-            "cross-walk": 0,
-            "road-way": 0
-            },
-        "left" : {
-            "caution": 0, 
-            "cross-walk": 0, 
-            "road-way": 0
-            },
-        "front" : {
-            "caution": 0, 
-            "cross-walk": 0, 
-            "road-way": 0
-            },
-        "right" : {
-            "caution": 0, 
-            "cross-walk": 0, 
-            "road-way": 0
-            },
-        "right-end" : {
-            "caution": 0, 
-            "cross-walk": 0, 
-            "road-way": 0
-            }
+
+    left = {
+        "caution": 0, 
+        "cross-walk": 0, 
+        "road-way": 0
+    }
+    front = {
+        "caution": 0, 
+        "cross-walk": 0, 
+        "road-way": 0
+    }
+    right = {
+        "caution": 0, 
+        "cross-walk": 0, 
+        "road-way": 0
     }
 
-    async def caution_zone(result, dic):
-        cnt_2 = 0
-        cnt_3 = 0
-        cnt_5 = 0
-        k_list = []
-        for j in result:
-            for x in j:
-                if x == 2:
-                    cnt_2 += 1
-                elif x == 3:
-                    cnt_3 += 1
-                elif x == 5:
-                    cnt_5 += 1
-
-        for key in dic:
-            k_list.append(key)
-        dic[k_list[0]] = cnt_2
-        dic[k_list[1]] = cnt_3
-        dic[k_list[2]] = cnt_5
+    async def caution_zone(section, dic):
+        dic["caution"] = (section == 2).sum()
+        dic["cross-walk"] = (section == 3).sum()
+        dic["road-way"] = (section == 5).sum()
 
 
     async def find_section(dic, s):
         context ={}
         for key in dic:
-            if dic[key] > 1000:
-                context["label"] = key
-                context["direction"] = s
-                result_list.append(context)
+            if key == "road-way":
+                if dic[key] > 4000:
+                    context["label"] = key
+                    context["direction"] = s
+                    if not context in result_list:
+                        result_list.append(context)
+            elif key == "caution":
+                if dic[key] > 1000:
+                    context["label"] = key
+                    context["direction"] = s
+                    if not context in result_list:
+                        result_list.append(context)
+            elif key == "cross-walk":
+                if dic[key] > 1000:
+                    context["label"] = key
+                    context["direction"] = s
+                    if not context in result_list:
+                        result_list.append(context)
+            
+
 
 
     async def caution_async_process():
         start = time.time()
         await asyncio.wait([
-            caution_zone(section1, result["left-end"]),
-            caution_zone(section2, result["left"]),
-            caution_zone(section3, result["front"]),
-            caution_zone(section4, result["right"]),
-            caution_zone(section5, result["right-end"]),
+            caution_zone(section1, left),
+            caution_zone(section2, front),
+            caution_zone(section3, right),
         ])
         end = time.time()
         print(f'>>> caution_zone 비동기 처리 총 소요 시간: {end - start}')
 
         start = time.time()
         await asyncio.wait([
-            find_section(result["left-end"], "left_end"),
-            find_section(result["left"], "left"),
-            find_section(result["front"], "front"),
-            find_section(result["right"], "right"),
-            find_section(result["right-end"], "right_end"),
+            find_section(left, "left"),
+            find_section(front, "front"),
+            find_section(right, "right"),
         ])
         end = time.time()
         print(f'>>> direction_guidance 비동기 처리 총 소요 시간: {end - start}')
 
 
     asyncio.run(caution_async_process())
-    print("=============")
-    print(result_list)
 
 #""bike_lane_normal", "sidewalk_asphalt", "sidewalk_urethane""
 # "caution_zone_stairs", "caution_zone_manhole", "caution_zone_tree_zone", "caution_zone_grating", "caution_zone_repair_zone"]
@@ -191,12 +174,5 @@ def direction(request):
         newdict = {}
         newdict["result"]=result_list
         return JsonResponse(newdict)
-        #image.save('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png', format='PNG')
-        #return Response("OK")
     else:
-        #predict()
-        #newdict = {}
-
-        #newdict["result"]=test_lis
-        #data = newdict
-        return JsonResponse(newdict)
+        return JsonResponse("GET Method")
