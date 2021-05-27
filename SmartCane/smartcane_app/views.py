@@ -20,37 +20,34 @@ import json
 from django.http import JsonResponse
 from collections import ChainMap
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+
+if gpus:
+    try:
+        tf.config.experimental.set_virtual_device_configuration(
+            gpus[0],
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=500)])
+    except RuntimeError as e:
+        print(e)
+
+IMG_WIDTH = 480
+IMG_HEIGHT = 272
+n_classes = 7
+
+#Put in your local file path
+tensorflow_lite_model_file = "/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/converted_model.tflite"
+
+interpreter = tf.lite.Interpreter(tensorflow_lite_model_file)
+# Load TFLite model and allocate tensors.
+
+# Get input and output tensors.
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
 #result = {}
 result_list = []
 
 def predict(image):
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-
-    if gpus:
-        try:
-            tf.config.experimental.set_virtual_device_configuration(
-                gpus[0],
-                [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=500)])
-        except RuntimeError as e:
-            print(e)
-
-    IMG_WIDTH = 480
-    IMG_HEIGHT = 272
-    n_classes = 7
-
-    #Put in your local file path
-    tensorflow_lite_model_file = "/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/converted_model.tflite"
-
-    interpreter = tf.lite.Interpreter(tensorflow_lite_model_file)
-    # Load TFLite model and allocate tensors.
-
-    # Get input and output tensors.
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-
-
-    # input details
-    #img = cv2.imread('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png')
     img = np.array(image)
     img = cv2.resize(img, (IMG_WIDTH,IMG_HEIGHT))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -131,8 +128,6 @@ def predict(image):
                     if not context in result_list:
                         result_list.append(context)
             
-
-
 
     async def caution_async_process():
         start = time.time()
