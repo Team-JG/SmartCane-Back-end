@@ -21,7 +21,7 @@ from django.http import JsonResponse
 from collections import ChainMap
 
 #result = {}
-test_lis = []
+result_list = []
 
 def predict(image):
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -142,7 +142,7 @@ def predict(image):
             if dic[key] > 1000:
                 context["label"] = key
                 context["direction"] = s
-                test_lis.append(context)
+                result_list.append(context)
 
 
     async def caution_async_process():
@@ -171,7 +171,7 @@ def predict(image):
 
     asyncio.run(caution_async_process())
     print("=============")
-    print(test_lis)
+    print(result_list)
 
 #""bike_lane_normal", "sidewalk_asphalt", "sidewalk_urethane""
 # "caution_zone_stairs", "caution_zone_manhole", "caution_zone_tree_zone", "caution_zone_grating", "caution_zone_repair_zone"]
@@ -186,11 +186,10 @@ def direction(request):
     if request.method == "POST":
         bytes = request.FILES['file'].file.getvalue()
         image = Image.open(io.BytesIO(bytes)).convert("RGB")
-        test_lis.clear()
+        result_list.clear()
         predict(image)
         newdict = {}
-        newdict["result"]=test_lis
-        daata = newdict
+        newdict["result"]=result_list
         return JsonResponse(newdict)
         #image.save('/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/surface_img/test.png', format='PNG')
         #return Response("OK")
