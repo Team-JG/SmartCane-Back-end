@@ -5,5 +5,5 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
-    path('direct/', views.direction, name='post-dl')
+    path('segmentation/', views.direction, name='post-dl')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
