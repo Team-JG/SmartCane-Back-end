@@ -102,6 +102,7 @@ def predict(image):
                     context["direction"] = s
                     if not context in result_list:
                         result_list.append(context)
+       
             
 
     def caution_async_process():
