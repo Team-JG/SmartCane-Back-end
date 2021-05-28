@@ -9,6 +9,7 @@ from rest_framework.parsers import JSONParser, FileUploadParser
 from rest_framework import status, viewsets
 from .display import create_mask, show_predictions
 import cv2
+from tensorflow import keras 
 import tensorflow as tf
 import os
 import io
@@ -34,15 +35,9 @@ IMG_WIDTH = 480
 IMG_HEIGHT = 272
 n_classes = 7
 
-#Put in your local file path
-tensorflow_lite_model_file = "/Users/kim-yulhee/SmartCane-Back-end/SmartCane/smartcane_app/converted_model.tflite"
+file_name = os.path.dirname(__file__) + '/pspunet_weight.h5'
+model = keras.models.load_model(file_name)
 
-interpreter = tf.lite.Interpreter(tensorflow_lite_model_file)
-# Load TFLite model and allocate tensors.
-
-# Get input and output tensors.
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
 
 #result = {}
 result_list = []
@@ -55,28 +50,8 @@ def predict(image):
     img = tf.expand_dims(img, 0)
     img = img / 255
 
-    input_data = np.array(img, dtype=np.float32)
-    #print(input_data.shape)
-    '''
-    Get indexes of input and output layers
-    input_details[0]['index']를 출력하면 0, 딕셔너리 안에 index라는 key가 있고 그 Index값이 0임.
-    [1,IMG_HEIGHT, IMG_WIDTH,3] -> input에 들어가는 image의 shape 형태 [갯수, height, width, 채널]
-    '''
-    interpreter.resize_tensor_input(input_details[0]['index'],[1, IMG_HEIGHT, IMG_WIDTH, 3])
-    # allocate_tensor
-    interpreter.allocate_tensors()
-    '''
-    Transform input data (tensor_index, value)
-    tensor_index: Tensor index of tensor to set. This value can be gotten from the 'index' field in get_input_details.
-    value:	Value of tensor to set.
-    '''
-    interpreter.set_tensor(input_details[0]['index'], input_data)
-    # run the inference
-    interpreter.invoke()
-    # output_details[0]['index'] = the index which provides the input
-    output_data = interpreter.get_tensor(output_details[0]['index'])
-
-    pre = create_mask(output_data).numpy()
+    pre = model.predict(img)
+    pre = create_mask(pre).numpy()
 
     section1 = np.array(pre).T[0][0:160]
     section2 = np.array(pre).T[0][160:320]
