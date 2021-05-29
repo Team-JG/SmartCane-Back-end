@@ -120,7 +120,7 @@ def predict(image):
             find_section(left, "left"),
             find_section(front, "front"),
             find_section(right, "right"),
-        )]
+        ])
         end = time.time()
         print(f'>>> direction_guidance 비동기 처리 총 소요 시간: {end - start}')
 
