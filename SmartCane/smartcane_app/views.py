@@ -75,13 +75,13 @@ def predict(image):
         "road-way": 0
     }
 
-    def caution_zone(section, dic):
+    async def caution_zone(section, dic):
         dic["caution"] = (section == 2).sum()
         dic["cross-walk"] = (section == 3).sum()
         dic["road-way"] = (section == 5).sum()
 
 
-    def find_section(dic, s):
+    async def find_section(dic, s):
         context ={}
         for key in dic:
             if key == "road-way":
@@ -105,23 +105,27 @@ def predict(image):
        
             
 
-    def caution_async_process():
+    async def caution_async_process():
         start = time.time()
-        caution_zone(section1, left),
-        caution_zone(section2, front),
-        caution_zone(section3, right),
+        await asyncio.wait([
+            caution_zone(section1, left),
+            caution_zone(section2, front),
+            caution_zone(section3, right),
+        ])
         end = time.time()
         print(f'>>> caution_zone 비동기 처리 총 소요 시간: {end - start}')
 
         start = time.time()
-        find_section(left, "left"),
-        find_section(front, "front"),
-        find_section(right, "right"),
+        await asyncio.wait([
+            find_section(left, "left"),
+            find_section(front, "front"),
+            find_section(right, "right"),
+        )]
         end = time.time()
         print(f'>>> direction_guidance 비동기 처리 총 소요 시간: {end - start}')
 
 
-    caution_async_process()
+    asyncio.run(caution_async_process())
 
 #""bike_lane_normal", "sidewalk_asphalt", "sidewalk_urethane""
 # "caution_zone_stairs", "caution_zone_manhole", "caution_zone_tree_zone", "caution_zone_grating", "caution_zone_repair_zone"]
