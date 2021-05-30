@@ -1,5 +1,7 @@
 # SmartCane-Back-end
 SmartCane-Back-end
+### 4학년 1학기 졸업작품 시각장애인용 딥러닝 기반 스마트 지팡이
+#### 안드로이드 APP에서 딥러닝 호출을 위한 API 개발
 
 💻서버 실행 방법
 1. git clone
