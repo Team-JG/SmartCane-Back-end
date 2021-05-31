@@ -1,0 +1,31 @@
+version: "3"
+services:
+  smartcane:
+    build : 
+      context : . 
+      dockerfile : Dockerfile
+    image: jinsol/smartcane:1.0.0
+    container_name : smartcane
+    volumes: 
+      - .:/docker-server/
+    command: gunicorn SmartCane.wsgi:application --bind 0.0.0.0:8000
+    ports: 
+      - "8000:8000"
+    expose : 
+      - "8000"
+  nginx:
+    container_name: nginx
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: jinsol/nginx:1.0.0
+    ports:
+      - "80:80"
+    expose:
+      - "80"
+    volumes:
+      - .:/docker-server
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - smartcane
+
