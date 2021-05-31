@@ -13,6 +13,7 @@ from tensorflow import keras
 import tensorflow as tf
 import os
 import io
+from io import BytesIO
 import numpy as np
 from PIL import Image
 import time
@@ -20,6 +21,9 @@ import asyncio
 import json
 from django.http import JsonResponse
 from collections import ChainMap
+from django.conf import settings
+import boto3
+import uuid          
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 
@@ -38,7 +42,7 @@ n_classes = 7
 file_name = os.path.dirname(__file__) + '/pspunet_weight.h5'
 model = keras.models.load_model(file_name)
 
-
+print(tf.__version__)
 #result = {}
 result_list = []
 
@@ -138,12 +142,38 @@ def predict(image):
 @api_view(['GET','POST'])
 def direction(request):
     if request.method == "POST":
-        bytes = request.FILES['file'].file.getvalue()
+        get_file = request.FILES['file']
+        bytes = get_file.file.getvalue()
         image = Image.open(io.BytesIO(bytes)).convert("RGB")
         result_list.clear()
         predict(image)
         newdict = {}
         newdict["result"]=result_list
+
+        access_key = settings.AWS_ACCESS_KEY_ID
+        access_secret_key = settings.AWS_SECRET_ACCESS_KEY
+        bucket_name = settings.AWS_STORAGE_BUCKET_NAME 
+
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id = access_key,
+            aws_secret_access_key = access_secret_key
+        )
+        im = Image.open(get_file)
+        im = im.resize((480, 272))
+        buffer = BytesIO()
+        im.save(buffer, "JPEG")
+        buffer.seek(0)
+            
+        url_generator = str(uuid.uuid4())
+        s3_client.upload_fileobj(
+            buffer,
+            "jgback",
+            url_generator,
+            ExtraArgs = {
+                "ContentType": 'image/jpeg'
+            }
+        )
         return JsonResponse(newdict)
     else:
         return JsonResponse("GET Method")
