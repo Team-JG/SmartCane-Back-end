@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from rest_framework import views
 from rest_framework.response import Response
-from .serializers import DirectionSerializer, ImageSerializer
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from django.http.response import JsonResponse
